@@ -1,6 +1,10 @@
 import asyncio
 import discord
 from discord.ext import commands
+from math import ceil
+import youtube_dl
+from youtube_dl import YoutubeDL
+import functools
 
 if not discord.opus.is_loaded():
     # the 'opus' library here is opus.dll on windows
@@ -56,7 +60,14 @@ class VoiceState:
         while True:
             self.play_next_song.clear()
             self.current = await self.songs.get()
-            await self.bot.send_message(self.current.channel, 'Now playing ' + str(self.current))
+            player = self.current.player
+
+            description = 'Now playing [{}]({})'.format(player.title,player.url)
+            message = discord.Embed(description=description,color=0x30b030)
+            footer = 'Requested by {0} | {1[0]}:{1[1]:02d}'.format(self.current.requester.display_name, divmod(player.duration, 60))
+            message.set_footer(text=footer, icon_url=self.current.requester.avatar_url)
+
+            await self.bot.send_message(self.current.channel, embed=message)
             self.current.player.start()
             await self.play_next_song.wait()
 
@@ -65,9 +76,13 @@ class Music:
 
     Works in multiple servers at once.
     """
+
     def __init__(self, bot):
         self.bot = bot
         self.voice_states = {}
+
+        self.ydl = YoutubeDL()
+        self.ydl.add_default_info_extractors()
 
     def get_voice_state(self, server):
         state = self.voice_states.get(server.id)
@@ -121,7 +136,7 @@ class Music:
 
 
     @commands.command(pass_context=True, no_pm=True)
-    async def play(self, ctx, *, song : str):
+    async def add(self, ctx, *, song : str):
         """Plays a song.
 
         If there is a song currently in the queue, then it is
@@ -135,6 +150,13 @@ class Music:
         opts = {
             'default_search': 'auto',
             'quiet': True,
+                        # 'format': 'bestaudio/best',
+                        # 'extractaudio': True,
+                        # 'audioformat': "mp3",
+                        # 'noplaylist': True,
+                        # 'nocheckcertificate': True,
+                        # 'ignoreerrors': False,
+                        # 'no_warnings': False,
         }
 
         if state.voice is None:
@@ -143,14 +165,29 @@ class Music:
                 return
 
         try:
-            player = await state.voice.create_ytdl_player(song, ytdl_options=opts, after=state.toggle_next)
+            player = await state.voice.create_ytdl_player(song, ytdl_options=opts, after=state.toggle_next, options="-b:a 64k -bufsize 64k")
+            func = functools.partial(player.yt.extract_info, song, download=False)
+            info = await self.bot.loop.run_in_executor(None, func)
         except Exception as e:
             fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
             await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
         else:
             player.volume = 0.6
+
+            if "entries" in info:
+                info = info['entries'][0]
+
+            player.thumbnail = info['thumbnail']
+            player.url = info['webpage_url']
+
             entry = VoiceEntry(ctx.message, player)
-            await self.bot.say('Enqueued ' + str(entry))
+
+            description = 'Queued up [{}]({})'.format(player.title,player.url)
+            message = discord.Embed(description=description,color=0x30b030)
+            footer = 'Requested by {0} | {1[0]}:{1[1]:02d}'.format(entry.requester.display_name, divmod(player.duration, 60))
+            message.set_footer(text=footer, icon_url=entry.requester.avatar_url)
+
+            await self.bot.send_message(ctx.message.channel, embed=message)
             await state.songs.put(entry)
 
     @commands.command(pass_context=True, no_pm=True)
@@ -172,7 +209,7 @@ class Music:
             player.pause()
 
     @commands.command(pass_context=True, no_pm=True)
-    async def resume(self, ctx):
+    async def play(self, ctx):
         """Resumes the currently played song."""
         state = self.get_voice_state(ctx.message.server)
         if state.is_playing():
@@ -235,4 +272,40 @@ class Music:
             await self.bot.say('Not playing anything.')
         else:
             skip_count = len(state.skip_votes)
-            await self.bot.say('Now playing {} [skips: {}/3]'.format(state.current, skip_count))
+            player = state.current.player
+            description = '[{}]({}) uploaded by {}'.format(player.title,player.url, state.current.player.uploader)
+            message = discord.Embed(description=description,color=0x30b030)
+            footer = 'Requested by {0} | {1[0]}:{1[1]:02d} | skips: {2}/3'.format(state.current.requester.display_name, divmod(player.duration, 60), skip_count)
+            message.set_footer(text=footer, icon_url=state.current.requester.avatar_url)
+            message.add_field(name='Likes', value=state.current.player.likes)
+            message.add_field(name='Dislikes', value=state.current.player.dislikes)
+            message.add_field(name='Description', value=state.current.player.description)
+            await self.bot.send_message(ctx.message.channel, embed=message)
+
+    @commands.command(pass_context=True, no_pm=True)
+    async def queue(self, ctx, *, page=1):
+        """Shows the current songs that are queued."""
+        state = self.get_voice_state(ctx.message.server)
+
+        if state.songs.empty():
+            await self.bot.say('The queue is empty.')
+        else:
+            player = state.current.player
+            description = ''
+            total_time = 0
+            max_page = ceil(len(state.songs._queue) / 10)
+            page = max(min(page,max_page),1)
+            title = 'Music Queue - Page {}/{}'.format(page,max_page)
+
+            for index, song in enumerate(state.songs._queue):
+                total_time += song.player.duration
+                if index >= (page-1) * 10 and index < page * 10:
+                    description += '{}. [{}]({})\n'.format(index+1, song.player.title,song.player.url)
+                    description += '    {0} | {1[0]}:{1[1]:02d}\n'.format(song.requester.display_name, divmod(song.player.duration, 60))
+
+            message = discord.Embed(title=title,description=description,color=0x3c86b4)
+            is_playing = 'Playing' if state.is_playing() else 'Paused'
+            footer = '{0} tracks | {1[0]}:{1[1]:02d} | {2}'.format(len(state.songs._queue), divmod(total_time, 60), is_playing)
+            message.set_footer(text=footer)
+
+            await self.bot.send_message(ctx.message.channel, embed=message)

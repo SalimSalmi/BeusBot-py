@@ -11,8 +11,7 @@ class General:
     async def countdown(self, count=3):
         """Counts down from a given number.
         Default 3, max 10, min 1."""
-        count = max(count, 1)
-        count = min(count, 10)
+        count = min(max(count, 1),10)
         for i in range(count):
             await self.bot.say(count-i)
             sleep(1)
