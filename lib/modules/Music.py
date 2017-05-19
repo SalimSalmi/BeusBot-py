@@ -150,13 +150,13 @@ class Music:
         opts = {
             'default_search': 'auto',
             'quiet': True,
-                        # 'format': 'bestaudio/best',
-                        # 'extractaudio': True,
-                        # 'audioformat': "mp3",
-                        # 'noplaylist': True,
-                        # 'nocheckcertificate': True,
-                        # 'ignoreerrors': False,
-                        # 'no_warnings': False,
+            'format': 'bestaudio/best',
+            'extractaudio': True,
+            'audioformat': "mp3",
+            'noplaylist': True,
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
+            'no_warnings': False,
         }
 
         if state.voice is None:
@@ -165,7 +165,7 @@ class Music:
                 return
 
         try:
-            player = await state.voice.create_ytdl_player(song, ytdl_options=opts, after=state.toggle_next, options="-b:a 64k -bufsize 64k")
+            player = await state.voice.create_ytdl_player(song, ytdl_options=opts, after=state.toggle_next, options=' -b:a 64k -bufsize 64k')
             func = functools.partial(player.yt.extract_info, song, download=False)
             info = await self.bot.loop.run_in_executor(None, func)
         except Exception as e:
