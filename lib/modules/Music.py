@@ -165,7 +165,7 @@ class Music:
                 return
 
         try:
-            player = await state.voice.create_ytdl_player(song, ytdl_options=opts, after=state.toggle_next, use_avconv=True, options=' -b:a 64k -bufsize 64k')
+            player = await state.voice.create_ytdl_player(song, ytdl_options=opts, after=state.toggle_next, options=' -b:a 64k -bufsize 64k', before_options=" -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5")
             func = functools.partial(player.yt.extract_info, song, download=False)
             info = await self.bot.loop.run_in_executor(None, func)
         except Exception as e:
