@@ -34,7 +34,7 @@ class Sounds:
     async def short_sound(self, song : str, ctx):
         state = self.music.get_voice_state(ctx.message.server)
         if state.voice is None:
-            success = await ctx.invoke(self.music.summon)
+            success = await ctx.invoke(self.music.join)
             if not success:
                 return
 
