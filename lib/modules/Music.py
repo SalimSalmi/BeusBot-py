@@ -84,6 +84,8 @@ class Music:
         self.ydl = YoutubeDL()
         self.ydl.add_default_info_extractors()
 
+        self.volume = 0.6
+
     def get_voice_state(self, server):
         state = self.voice_states.get(server.id)
         if state is None:
@@ -172,7 +174,7 @@ class Music:
             fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
             await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
         else:
-            player.volume = 0.6
+            player.volume = self.volume
 
             if "entries" in info:
                 info = info['entries'][0]
@@ -198,6 +200,7 @@ class Music:
         if state.is_playing():
             player = state.player
             player.volume = value / 100
+            self.volume = player.volume
             await self.bot.say('Set the volume to {:.0%}'.format(player.volume))
 
     @commands.command(pass_context=True, no_pm=True)

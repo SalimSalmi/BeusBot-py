@@ -6,6 +6,7 @@ class Sounds:
     def __init__(self,bot):
         self.bot = bot
         self.music = bot.get_cog('Music')
+        self.playing = False
 
     @commands.command(pass_context=True, no_pm=True)
     async def goat(self, ctx):
@@ -32,13 +33,21 @@ class Sounds:
         await self.short_sound('./data/audio/sounds/rawr.mp3', ctx)
 
     async def short_sound(self, song : str, ctx):
+
+        if self.playing is True:
+            return
+
+        self.playing = True
+
         state = self.music.get_voice_state(ctx.message.server)
+
         if state.voice is None:
             success = await ctx.invoke(self.music.join)
             if not success:
                 return
 
         def interupt():
+            self.playing = False
             if state.is_playing():
                 state.player.resume()
             else:
