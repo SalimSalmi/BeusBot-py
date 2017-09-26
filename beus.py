@@ -31,19 +31,19 @@ class Bot(commands.Bot):
         self._intro_displayed = False
         self._shutdown_mode = False
 
-        # logger_b = logging.getLogger('beus')
-        # logger_b.setLevel(logging.WARNING)
-        # handler = logging.FileHandler(filename='logs/beus.log', encoding='utf-8', mode='w')
-        # handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s',datefmt="[%d/%m/%Y %H:%M]"))
-        # logger_b.addHandler(handler)
-        #
-        # self.logger = logger_b
-        #
-        # logger_d = logging.getLogger('discord')
-        # logger_d.setLevel(logging.WARNING)
-        # handler = logging.FileHandler(filename='logs/discord.log', encoding='utf-8', mode='w')
-        # handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s',datefmt="[%d/%m/%Y %H:%M]"))
-        # logger_d.addHandler(handler)
+        logger_b = logging.getLogger('beus')
+        logger_b.setLevel(logging.DEBUG)
+        handler = logging.FileHandler(filename='logs/beus.log', encoding='utf-8', mode='w')
+        handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s',datefmt="[%d/%m/%Y %H:%M]"))
+        logger_b.addHandler(handler)
+
+        self.logger = logger_b
+
+        logger_d = logging.getLogger('discord')
+        logger_d.setLevel(logging.INFO)
+        handler = logging.FileHandler(filename='logs/discord.log', encoding='utf-8', mode='w')
+        handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s',datefmt="[%d/%m/%Y %H:%M]"))
+        logger_d.addHandler(handler)
 
         super().__init__(*args, command_prefix=settings.PREFIX, **kwargs)
 
