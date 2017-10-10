@@ -193,7 +193,7 @@ class Music:
             await state.songs.put(entry)
 
     @commands.command(pass_context=True, no_pm=True)
-    async def volume(self, ctx, value : int):
+    async def volume(self, ctx, *, value : int):
         """Sets the volume of the currently playing song."""
 
         state = self.get_voice_state(ctx.message.server)
