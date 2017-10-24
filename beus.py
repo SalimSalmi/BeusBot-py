@@ -78,8 +78,6 @@ def main(bot):
     bot.run(settings.TOKEN)
 
 
-def
-
 if __name__ == '__main__':
 
     bot = Bot(formatter=Formatter(show_check_failure=False), description="Beus bot :D")
