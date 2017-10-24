@@ -77,45 +77,41 @@ def main(bot):
 
     bot.run(settings.TOKEN)
 
-if __name__ == '__main__':
-    bot = Bot(formatter=Formatter(show_check_failure=False), description="Beus bot :D")
 
-    main(bot)
-
+def
 
 if __name__ == '__main__':
 
     bot = Bot(formatter=Formatter(show_check_failure=False), description="Beus bot :D")
 
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(main(bot))
-    except discord.LoginFailure:
-        bot.logger.error(traceback.format_exc())
-        if not bot.settings.no_prompt:
-            choice = input("Invalid login credentials. If they worked before "
-                           "Discord might be having temporary technical "
-                           "issues.\nIn this case, press enter and try again "
-                           "later.\nOtherwise you can type 'reset' to reset "
-                           "the current credentials and set them again the "
-                           "next start.\n> ")
-            if choice.lower().strip() == "reset":
-                bot.settings.token = None
-                bot.settings.email = None
-                bot.settings.password = None
-                bot.settings.save_settings()
-                print("Login credentials have been reset.")
-    except KeyboardInterrupt:
-        loop.run_until_complete(bot.logout())
-    except Exception as e:
-        bot.logger.exception("Fatal exception, attempting graceful logout",
-                             exc_info=e)
-        loop.run_until_complete(bot.logout())
-    finally:
-        loop.close()
-        if bot._shutdown_mode is True:
-            exit(0)
-        elif bot._shutdown_mode is False:
-            exit(26) # Restart
-        else:
-            exit(1)
+    while bot._shutdown_mode is False:
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_until_complete(main(bot))
+        except discord.LoginFailure:
+            bot.logger.error(traceback.format_exc())
+            if not bot.settings.no_prompt:
+                choice = input("Invalid login credentials. If they worked before "
+                               "Discord might be having temporary technical "
+                               "issues.\nIn this case, press enter and try again "
+                               "later.\nOtherwise you can type 'reset' to reset "
+                               "the current credentials and set them again the "
+                               "next start.\n> ")
+                if choice.lower().strip() == "reset":
+                    bot.settings.token = None
+                    bot.settings.email = None
+                    bot.settings.password = None
+                    bot.settings.save_settings()
+                    print("Login credentials have been reset.")
+
+            bot._shutdown_mode = True
+        except KeyboardInterrupt:
+            loop.run_until_complete(bot.logout())
+            bot._shutdown_mode = True
+        except Exception as e:
+            bot.logger.exception("Fatal exception, attempting graceful logout",
+                                 exc_info=e)
+            loop.run_until_complete(bot.logout())
+            bot.logger.exception("Bot attempting to restart.")
+
+    bot.logger.exception("Bot shutting down.")
