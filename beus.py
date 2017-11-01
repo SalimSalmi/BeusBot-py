@@ -109,6 +109,7 @@ if __name__ == '__main__':
         except Exception as e:
             bot.logger.exception("Fatal exception, attempting graceful logout",
                                  exc_info=e)
+            loop = asyncio.get_event_loop()
             loop.run_until_complete(bot.logout())
             bot.logger.exception("Bot attempting to restart.")
 
