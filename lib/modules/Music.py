@@ -192,16 +192,6 @@ class Music:
             await self.bot.send_message(ctx.message.channel, embed=message)
             await state.songs.put(entry)
 
-    @commands.command(pass_context=True, no_pm=True)
-    async def volume(self, ctx, *, value : int):
-        """Sets the volume of the currently playing song."""
-
-        state = self.get_voice_state(ctx.message.server)
-        if state.is_playing():
-            player = state.player
-            player.volume = value / 100
-            self.volume = player.volume
-            await self.bot.say('Set the volume to {:.0%}'.format(player.volume))
 
     @commands.command(pass_context=True, no_pm=True)
     async def pause(self, ctx):
@@ -265,6 +255,17 @@ class Music:
                 await self.bot.say('Skip vote added, currently at [{}/3]'.format(total_votes))
         else:
             await self.bot.say('You have already voted to skip this song.')
+
+    @commands.command(pass_context=True, no_pm=True)
+    async def volume(self, ctx, *, value : int):
+        """Sets the volume of the currently playing song."""
+
+        state = self.get_voice_state(ctx.message.server)
+        if state.is_playing():
+            player = state.player
+            player.volume = value / 100
+            self.volume = player.volume
+            await self.bot.say('Set the volume to {:.0%}'.format(player.volume))
 
     @commands.command(pass_context=True, no_pm=True)
     async def playing(self, ctx):
