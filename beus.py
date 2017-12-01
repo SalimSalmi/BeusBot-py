@@ -83,6 +83,7 @@ if __name__ == '__main__':
     bot = Bot(formatter=Formatter(show_check_failure=False), description="Beus bot :D")
 
     while bot._shutdown_mode is False:
+        asyncio.set_event_loop(asyncio.new_event_loop())
         loop = asyncio.get_event_loop()
         try:
             loop.run_until_complete(main(bot))
